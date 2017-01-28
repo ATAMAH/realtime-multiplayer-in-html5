@@ -1,8 +1,8 @@
 /*  Copyright 2012-2016 Sven "underscorediscovery" Bergström
-    
+
     written by : http://underscorediscovery.ca
     written for : http://buildnewgames.com/real-time-multiplayer/
-    
+
     MIT Licensed.
 
     Usage : node app.js
@@ -11,7 +11,12 @@
     var
         gameport        = process.env.PORT || 4004,
 
-        io              = require('socket.io'),
+        io              = require('socket.io')({
+                                                'log level'    : 0,
+                                                'authorization': function (handshakeData, callback) {
+                                                  callback(null, true); // error first callback style
+                                                }
+                                              });
         express         = require('express'),
         UUID            = require('node-uuid'),
 
@@ -36,7 +41,7 @@
         //By default, we forward the / path to index.html automatically.
     app.get( '/', function( req, res ){
         console.log('trying to load %s', __dirname + '/index.html');
-        res.sendfile( '/index.html' , { root:__dirname });
+        res.sendFile( '/index.html' , { root:__dirname });
     });
 
 
@@ -52,7 +57,7 @@
         if(verbose) console.log('\t :: Express :: file requested : ' + file);
 
             //Send the requesting client the file.
-        res.sendfile( __dirname + '/' + file );
+        res.sendFile( __dirname + '/' + file );
 
     }); //app.get *
 
@@ -61,13 +66,13 @@
 
 //Express and socket.io can work together to serve the socket.io client files for you.
 //This way, when the client requests '/socket.io/' files, socket.io determines what the client needs.
-        
+
         //Create a socket.io instance using our express server
     var sio = io.listen(server);
 
         //Configure the socket.io connection settings.
         //See http://socket.io/
-    sio.configure(function (){
+    /*sio.configure(function (){
 
         sio.set('log level', 0);
 
@@ -75,7 +80,7 @@
           callback(null, true); // error first callback style
         });
 
-    });
+    });*/
 
         //Enter the game server code. The game server handles
         //client connections looking for a game, creating games,
@@ -87,7 +92,7 @@
         //as well as give that client a unique ID to use so we can
         //maintain the list if players.
     sio.sockets.on('connection', function (client) {
-        
+
             //Generate a new UUID, looks something like
             //5b2ca132-64bd-4513-99da-90e838ca47d1
             //and store this on their socket/connection
@@ -102,7 +107,7 @@
 
             //Useful to know when someone connects
         console.log('\t socket.io:: player ' + client.userid + ' connected');
-        
+
 
             //Now we want to handle some of the messages that clients will send.
             //They send messages here, and we send them to the game_server to handle.
@@ -119,7 +124,7 @@
 
                 //Useful to know when soomeone disconnects
             console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game_id);
-            
+
                 //If the client was in a game, set by game_server.findGame,
                 //we can tell the game server to update that game state.
             if(client.game && client.game.id) {
@@ -130,5 +135,5 @@
             } //client.game_id
 
         }); //client.on disconnect
-     
+
     }); //sio.sockets.on connection
